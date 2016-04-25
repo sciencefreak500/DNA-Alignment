@@ -1,28 +1,34 @@
 import tkFileDialog as filedialog
 from Tkinter import *
-import sys
-import time
+import webbrowser
+import random
 
-root = Tk()
-filename = filedialog.askopenfilename()
-FwdGET = []
-fwdopen = open(filename,'r')
-for line in fwdopen:
-    FwdGET.append(line)
-    print line
-fwdopen.close()
+FwdSeq = ''
+RvSeq = ''
 
-filename = filedialog.askopenfilename()
-RevGET = []
-revopen = open(filename,'r')
-for line in revopen:
-    RevGET.append(line)
-    print line
-fwdopen.close()
-root.destroy()
+def GetSeqFiles():
+    global FwdSeq;
+    global RvSeq;
+    root = Tk()
+    filename = filedialog.askopenfilename()
+    FwdGET = []
+    fwdopen = open(filename,'r')
+    for line in fwdopen:
+        FwdGET.append(line)
 
-FwdSeq = FwdGET[-1]
-RvSeq = RevGET[-1]
+    fwdopen.close()
+
+    filename = filedialog.askopenfilename()
+    RevGET = []
+    revopen = open(filename,'r')
+    for line in revopen:
+        RevGET.append(line)
+
+    fwdopen.close()
+    root.destroy()
+
+    FwdSeq = FwdGET[-1]
+    RvSeq = RevGET[-1]
 
 #test sequence
 #FwdSeq = "ATGCGCAAATTGGCCGCGGGGATTAGTCGAGAGATCCTCGATCCCCCGCGATTAGACTGATCGAGCGCTATCCGAGTCAGCTATC"
@@ -106,38 +112,96 @@ def Alignment(template, comparison):
         templateArray.append(var1)
         comparisonArray.append(var2)
 
-    
     templateArray.sort(key = len)
     comparisonArray.sort(key = len)
-    top5Temp = templateArray[-5:]
-    compBefore = comparisonArray[-5:]
-    
-    top5Comp = []
-    for i in compBefore:
+    top10Temp = templateArray[-10:]
+    compBeforeUnfixed = comparisonArray[-10:]
+    top10Temp.reverse()
+    compBeforeUnfixed.reverse()
+    #topTemp = top10Temp
+    #TopCompBefore = compBeforeUnfixed
+
+    #'''
+
+    dontadd = False
+    topTemp = []
+    TopCompBefore = []
+    for i in top10Temp:
+        for j in top10Temp:
+            if i in j and i != j:
+                if len(j) > len(i):
+                    dontadd = True
+        if dontadd == False:
+            topTemp.append(i);
+        else:
+            dontadd = False;
+
+    for i in compBeforeUnfixed:
+        for j in compBeforeUnfixed:
+            if i in j and i != j:
+                if len(j) > len(i):
+                    dontadd = True
+        if dontadd == False:
+            TopCompBefore.append(i);
+        else:
+            dontadd = False;
+     #'''
+    topComp = []
+    for i in TopCompBefore:
         #print "starting with " + i;
         compComp = getCompliment(i);
         revComp = ReverseOrder(compComp);
         #print "now we have " + revComp
-        top5Comp.append(revComp);
-
-    return [top5Temp, top5Comp]
+        topComp.append(revComp);
+    
+    topTemp.sort(key = len)
+    topComp.sort(key = len)
+    
+    return [topTemp, topComp]
 
 
 def makeHTML(ForwardTotal, ReverseTotal, resultForward, resultReverse):
-    FwdStartNum = ForwardTotal.find(resultForward[-1])
-    FwdEndNum = len(resultForward[-1]) + FwdStartNum
-    beginSpan = '<span style="border: solid 1px black; background-color: yellow;">';
-    endSpan = '</span>';
-    NewForward = ForwardTotal[0:FwdStartNum] + beginSpan + resultForward[-1] + endSpan + ForwardTotal[FwdEndNum:len(ForwardTotal)];
 
-    RevStartNum = ReverseTotal.find(resultReverse[-1])
-    RevEndNum = len(resultReverse[-1:]) + RevStartNum
-    beginSpan = '<span style="border: solid 1px black; background-color: yellow;">';
-    endSpan = '</span>';
-    NewReverse = ReverseTotal[0:RevStartNum] + beginSpan + resultReverse[-1] + endSpan + ReverseTotal[RevEndNum:len(ReverseTotal)];
+    ColorPicker = ['yellow','burlywood','lightcoral','green','orange','lightgreen','lightsteelblue','lightblue','pink']
+    NewForward = ForwardTotal
+    NewReverse = ReverseTotal
+
+  
+    
+    for index, i in enumerate(resultForward):
+        num = index
+    
+        FwdStartNum = NewForward.find(resultForward[num])
+        FwdEndNum = len(resultForward[num]) + FwdStartNum
+        beginSpan = '<span style="border: solid 1px black; background-color: ' + random.choice(ColorPicker) + ';">';
+        endSpan = '</span>';
+        NewForward = NewForward[0:FwdStartNum] + beginSpan + resultForward[num] + endSpan + NewForward[FwdEndNum:len(NewForward)];
+
+    for index, i in enumerate(resultReverse):
+        num = index
+
+        RevStartNum = NewReverse.find(resultReverse[num])
+        RevEndNum = len(resultReverse[num]) + RevStartNum
+        beginSpan = '<span style="border: solid 1px black; background-color: ' + random.choice(ColorPicker) + ';">';
+        endSpan = '</span>';
+        NewReverse = NewReverse[0:RevStartNum] + beginSpan + resultReverse[num] + endSpan + NewReverse[RevEndNum:len(NewReverse)];
+
+
+    
+
+    num = 0.0
+    deno = 0.0
+    for i in resultForward[-1]:
+        if i =='C' or i == 'G':
+            num += 1;
+        deno += 1;
+
+    
+    GCRatio = round((num/deno)*100,2)
+            
     
     file = open('Results.html','w')
-    file.write('<html><body>')
+    file.write('<html><body style="padding: 0px 10px;">')
     file.write('<div style="border: solid 1px;padding: 5px; word-wrap:break-word;background-color:#F3EDED;margin:10px;"> <h1>Forward Sequence: </h1>')
     file.write('<div style="font-size:larger;display:block;padding:5px;">')
     file.write(NewForward)
@@ -147,6 +211,7 @@ def makeHTML(ForwardTotal, ReverseTotal, resultForward, resultReverse):
     file.write('</b> bp</div>')
     file.write('</div>')
     file.write('<div style="border: solid 1px;padding: 5px; word-wrap:break-word;background-color:#F3EDED;margin:10px;"> <h1>Reverse Sequence: </h1>')
+    file.write(ReverseTotal)
     file.write('<div style="font-size:larger;display:block;padding:5px;">')
     file.write(NewReverse)
     file.write('</div>')
@@ -154,6 +219,18 @@ def makeHTML(ForwardTotal, ReverseTotal, resultForward, resultReverse):
     file.write(str(RevStartNum))
     file.write('</b> bp</div>')
     file.write('</div>')
+
+    file.write('<ul>')
+    file.write('<li><div style="font-size:larger;display:block;padding:5px;">Length of Aligned Segment: <b>')
+    file.write(str(len(resultForward[-1])))
+    
+    file.write('</b> bp</div></li>')
+    
+    file.write('<li><div style="font-size:larger;display:block;padding:5px;">G-C Ratio of Aligned Segment: <b>')
+    file.write(str(GCRatio))
+    file.write('</b> %</div></li>')
+    file.write('</ul>')
+    
     file.write('<div style="font-size:larger;display:block;padding:5px;color:green;">')
     file.write(resultForward[-1])
     file.write('</div>')
@@ -165,18 +242,22 @@ def makeHTML(ForwardTotal, ReverseTotal, resultForward, resultReverse):
     file.close()
 
 #---------------------------------------------------------------------------
+
+GetSeqFiles()
                
 theComp = getCompliment(RvSeq);
 RvCompFlipped = ReverseOrder(theComp);
 
-
 ForwardResults, ReverseResults = Alignment(FwdSeq,RvCompFlipped)
 
-print ForwardResults[-1:]
-print ReverseResults[-1:]
+
 
 makeHTML(FwdSeq,RvSeq,ForwardResults,ReverseResults)
 
+
+
+url = "Results.html"
+webbrowser.open(url, new=2)
 
 
 sys.exit()
