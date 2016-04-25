@@ -166,27 +166,29 @@ def makeHTML(ForwardTotal, ReverseTotal, resultForward, resultReverse):
     NewForward = ForwardTotal
     NewReverse = ReverseTotal
 
-  
+    print "original str: " + NewReverse
+
+    import re
     
     for index, i in enumerate(resultForward):
-        num = index
-    
-        FwdStartNum = NewForward.find(resultForward[num])
-        FwdEndNum = len(resultForward[num]) + FwdStartNum
+                
+        print "Messing with: " + resultReverse[index]
+        FwdStartNum = NewForward.find(resultForward[index])
+        FwdEndNum = len(resultForward[index]) + FwdStartNum
         beginSpan = '<span style="border: solid 1px black; background-color: ' + random.choice(ColorPicker) + ';">';
         endSpan = '</span>';
-        NewForward = NewForward[0:FwdStartNum] + beginSpan + resultForward[num] + endSpan + NewForward[FwdEndNum:len(NewForward)];
+        NewForward = NewForward[0:FwdStartNum] + beginSpan + resultForward[index] + endSpan + NewForward[FwdEndNum:len(NewForward)];
 
-    for index, i in enumerate(resultReverse):
-        num = index
-
-        RevStartNum = NewReverse.find(resultReverse[num])
-        RevEndNum = len(resultReverse[num]) + RevStartNum
-        beginSpan = '<span style="border: solid 1px black; background-color: ' + random.choice(ColorPicker) + ';">';
-        endSpan = '</span>';
-        NewReverse = NewReverse[0:RevStartNum] + beginSpan + resultReverse[num] + endSpan + NewReverse[RevEndNum:len(NewReverse)];
-
-
+                
+        RevStartNum = NewReverse.find(resultReverse[index])
+        RevEndNum = len(resultReverse[index]) + RevStartNum
+        
+        NewReverse = NewReverse[0:RevStartNum] + beginSpan + resultReverse[index] + endSpan + NewReverse[RevEndNum:len(NewReverse)];
+        '''
+        NewReverse = NewReverse.replace(beginSpan,'')
+        NewReverse = NewReverse.replace(endSpan,'')
+        print "Check change: " + NewReverse
+        '''
     
 
     num = 0.0
@@ -211,7 +213,6 @@ def makeHTML(ForwardTotal, ReverseTotal, resultForward, resultReverse):
     file.write('</b> bp</div>')
     file.write('</div>')
     file.write('<div style="border: solid 1px;padding: 5px; word-wrap:break-word;background-color:#F3EDED;margin:10px;"> <h1>Reverse Sequence: </h1>')
-    file.write(ReverseTotal)
     file.write('<div style="font-size:larger;display:block;padding:5px;">')
     file.write(NewReverse)
     file.write('</div>')
@@ -231,12 +232,12 @@ def makeHTML(ForwardTotal, ReverseTotal, resultForward, resultReverse):
     file.write('</b> %</div></li>')
     file.write('</ul>')
     
-    file.write('<div style="font-size:larger;display:block;padding:5px;color:green;">')
+    file.write('<div style="font-size:larger;display:block;padding:5px;color:green;"><b>Longest Forward</b><div>')
     file.write(resultForward[-1])
-    file.write('</div>')
-    file.write('<div style="font-size:larger;display:block;padding:5px;color:green;">')
+    file.write('</div></div>')
+    file.write('<div style="font-size:larger;display:block;padding:5px;color:green;"><b>Longest Reverse</b><div>')
     file.write(resultReverse[-1])
-    file.write('</div>')
+    file.write('</div></div>')
     file.write('</body></html>')
 
     file.close()
