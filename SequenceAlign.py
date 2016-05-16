@@ -1,45 +1,84 @@
 import tkFileDialog as filedialog
 from Tkinter import *
+import tkMessageBox
 import webbrowser
 import random
+import sys, traceback
+import difflib
+from  __builtin__ import any as b_any
+from random import randint
 
 FwdSeq = ''
 RvSeq = ''
+root = Tk()
 
 def GetSeqFiles():
     global FwdSeq;
+
     global RvSeq;
-    root = Tk()
-    filename = filedialog.askopenfilename()
-    FwdGET = []
-    fwdopen = open(filename,'r')
+    
+    repeat = True
+    while repeat:
+        filename = filedialog.askopenfilename()
+        
+        try:
+            fwdopen = open(filename,'r')
+            repeat = False
+        except:
+            result = tkMessageBox.askquestion("Error", "An Error Occurred. Continue with Loading Forward Data? If 'Yes' is selected, please choose the Forward Sequence you want to Align.", icon='warning')
+            if result == 'yes':
+                repeat = True
+            else:
+                tkMessageBox.showinfo("Error", "The Program will now close.")
+                try:
+                    root.destroy()
+                except:
+                    print "already closed tk"
+                    
+                sys.exit()
+
+
+    FwdGET = []           
     for line in fwdopen:
         FwdGET.append(line)
 
     fwdopen.close()
 
-    filename = filedialog.askopenfilename()
-    RevGET = []
-    revopen = open(filename,'r')
-    for line in revopen:
-        RevGET.append(line)
+    repeat = True
+    while repeat:
+        filename1 = filedialog.askopenfilename()
+        
+        try:
+            revopen = open(filename1,'r')
+            repeat = False
+        except:
+            result = tkMessageBox.askquestion("Error", "An Error Occurred. Continue with Loading Reverse Data? If 'Yes' is selected, please choose the Reverse Sequence you want to Align.", icon='warning')
+            if result == 'yes':
+                repeat = True
+            else:
+                tkMessageBox.showinfo("Error", "The Program will now close.")
+                try:
+                    root.destroy()
+                except:
+                    print "already closed tk"
+                    
+                sys.exit()
 
-    fwdopen.close()
-    root.destroy()
+    RevGET = []
+    
+    for line1 in revopen:
+        RevGET.append(line1)
+
+    revopen.close()
+    try:
+        root.destroy()
+    except:
+        print "already closed tk"
 
     FwdSeq = FwdGET[-1]
     RvSeq = RevGET[-1]
 
-#test sequence
-#FwdSeq = "ATGCGCAAATTGGCCGCGGGGATTAGTCGAGAGATCCTCGATCCCCCGCGATTAGACTGATCGAGCGCTATCCGAGTCAGCTATC"
-#RvSeq =  "GATAGCTGACTCGGATAGCGCTCGATCAGTCTAATCGCGGGGGATCGAGGATCTCTCGACTAATCCCCGCGGCCAATTTGCGCAT"
-#RvSeq =  "GCTGACTCGGAGGAGCTGACTCGGATAGCTCGGGAGCTGACTCGGGAGCTGACTCGGATAGTCGCGGGG"
-
-#Step 1: Read in Forward and Reverse to strings
-#Step 2: Get Compliment of Reverse -- DONE
-#Step 3: Get Reverse Order of Reverse Compliment --DONE
-#Step 4: Align to Forward, check for overlap
-
+    print "end of file get: " + str(len(RvSeq))
 
 
 #gets the compliment strand
@@ -56,140 +95,80 @@ def getCompliment(ForwardSeq):
             Compliment+='G';
     return Compliment;
 
+
 #flips order of sequence (from 3->5, to 5->3)
 def ReverseOrder(strand):
     return strand[::-1]
 
+def Alignment(template,comparison):
+    seqlist = []
+    for temp_index, i in enumerate(template):
+        for comp_index, j in enumerate(comparison):
+            count = 0
+            string = ''
+            try:
+                while template[temp_index + count] == comparison[comp_index + count]:
+                    string += template[temp_index + count]
+                    count += 1
+            except:
+                pass
+            if len(string) > 1:
+                seqlist.append(string)
+            
+    seqlist = sorted(set(seqlist))
+    seqlist.sort(key = len, reverse = True)
 
-
-def Alignment(template, comparison):
-    allignArray = [];
-    first = 0
-    second = 0
-    templateArray = []
-    comparisonArray = []
-    for t_index,t_char in enumerate(template):
-        for c_index,c_char in enumerate(comparison):
-            if t_char == c_char:
-                #print "t_vs_c: " + str(t_index) + ":" + str(c_index)
-                count = 1
-                if t_index + count == len(template):
-                    first = len(template)-1
-                else:
-                    first = t_index + count;
-                #print first
-                if c_index + count == len(comparison):
-                    second = len(comparison)-1
-                else:
-                    second = c_index + count;
-                #print second
-                while first < len(template) or second < len(comparison):
-                    if template[first] == comparison[second]:
-                        #print str(first) + ":" + str(second)
-                        if(first == len(template)-1 or second == len(comparison)-1):
-                            #print "breaking on the 84"
-                            allignArray.append([template[t_index:first+1],comparison[c_index:second+1]])
-                            break;
-                        else:
-                            count+= 1;
-                        if t_index + count == len(template):
-                            first = len(template)-1
-                        else:
-                            first = t_index + count;
-                        if c_index + count == len(comparison):
-                            second = len(comparison)-1
-                        else:
-                            second = c_index + count;
-                    else:
-                        #print "breaking at the equal compare"
-                        allignArray.append([template[t_index:first],comparison[c_index:second]])
-                        break
-
-
-
-    for i in allignArray:
-        var1, var2 = i
-        templateArray.append(var1)
-        comparisonArray.append(var2)
-
-    templateArray.sort(key = len)
-    comparisonArray.sort(key = len)
-    top10Temp = templateArray[-10:]
-    compBeforeUnfixed = comparisonArray[-10:]
-    top10Temp.reverse()
-    compBeforeUnfixed.reverse()
-    #topTemp = top10Temp
-    #TopCompBefore = compBeforeUnfixed
-
-    #'''
-
-    dontadd = False
-    topTemp = []
-    TopCompBefore = []
-    for i in top10Temp:
-        for j in top10Temp:
-            if i in j and i != j:
-                if len(j) > len(i):
-                    dontadd = True
-        if dontadd == False:
-            topTemp.append(i);
-        else:
-            dontadd = False;
-
-    for i in compBeforeUnfixed:
-        for j in compBeforeUnfixed:
-            if i in j and i != j:
-                if len(j) > len(i):
-                    dontadd = True
-        if dontadd == False:
-            TopCompBefore.append(i);
-        else:
-            dontadd = False;
-     #'''
-    topComp = []
-    for i in TopCompBefore:
-        #print "starting with " + i;
-        compComp = getCompliment(i);
-        revComp = ReverseOrder(compComp);
-        #print "now we have " + revComp
-        topComp.append(revComp);
     
-    topTemp.sort(key = len)
-    topComp.sort(key = len)
-    
-    return [topTemp, topComp]
+    FullTemp = []
+    for i in seqlist:
+        NotFound = True
+        for j in seqlist:
+            if i in j and i != j:
+                NotFound = False
+                break
+        if NotFound == True:
+            FullTemp.append(i)
+            
+    FullComp = []
+    for i in FullTemp:
+        x = ReverseOrder(getCompliment(i));
+        FullComp.append(x)
+
+    return [FullTemp, FullComp]
 
 
 def makeHTML(ForwardTotal, ReverseTotal, resultForward, resultReverse):
-
-    ColorPicker = ['yellow','burlywood','lightcoral','green','orange','lightgreen','lightsteelblue','lightblue','pink']
+   
     NewForward = ForwardTotal
     NewReverse = ReverseTotal
+    Style = '<style>'
+    divID = 1
 
-    print "original str: " + NewReverse
+    print "NewReverse in HTML: " +  str(len(NewReverse))
+    if resultForward == []:
+        print "Error in file selection. No results found. Please select Forward and Reverse again."
+        ProgramFormat()
 
-    import re
-    
-    for index, i in enumerate(resultForward):
-                
-        print "Messing with: " + resultReverse[index]
-        FwdStartNum = NewForward.find(resultForward[index])
-        FwdEndNum = len(resultForward[index]) + FwdStartNum
-        beginSpan = '<span style="border: solid 1px black; background-color: ' + random.choice(ColorPicker) + ';">';
+    if resultReverse == []:
+        print "Error in file selection. No results found. Please select Forward and Reverse again."
+        ProgramFormat()
+
+    for index in range(0,len(resultForward)):
+        divs = 'divID' + str(divID)
+        ColorPicker = 'rgba(' + str(randint(0,255)) + ',' + str(randint(0,255)) + ',' + str(randint(0,255)) + ',' + str(0.5) + ')'
+        beginSpan = '<span id="' + divs +'" style="border: solid 1px black; background-color: ' + ColorPicker + ';">';
         endSpan = '</span>';
-        NewForward = NewForward[0:FwdStartNum] + beginSpan + resultForward[index] + endSpan + NewForward[FwdEndNum:len(NewForward)];
 
-                
-        RevStartNum = NewReverse.find(resultReverse[index])
-        RevEndNum = len(resultReverse[index]) + RevStartNum
-        
-        NewReverse = NewReverse[0:RevStartNum] + beginSpan + resultReverse[index] + endSpan + NewReverse[RevEndNum:len(NewReverse)];
-        '''
-        NewReverse = NewReverse.replace(beginSpan,'')
-        NewReverse = NewReverse.replace(endSpan,'')
-        print "Check change: " + NewReverse
-        '''
-    
+        Style += '#' + divs + ':hover{color: yellow;}'
+        NewForward = NewForward.replace(resultForward[index],beginSpan + resultForward[index] + endSpan)
+        NewReverse = NewReverse.replace(resultReverse[index],beginSpan + resultReverse[index] + endSpan)
+
+        FwdStartNum = NewForward.find(resultForward[-1])
+        RevStartNum = NewReverse.find(resultReverse[-1])
+
+        divID += 1
+   
+    Style +='</style>'
 
     num = 0.0
     deno = 0.0
@@ -200,10 +179,11 @@ def makeHTML(ForwardTotal, ReverseTotal, resultForward, resultReverse):
 
     
     GCRatio = round((num/deno)*100,2)
-            
+    
     
     file = open('Results.html','w')
     file.write('<html><body style="padding: 0px 10px;">')
+    file.write(Style)
     file.write('<div style="border: solid 1px;padding: 5px; word-wrap:break-word;background-color:#F3EDED;margin:10px;"> <h1>Forward Sequence: </h1>')
     file.write('<div style="font-size:larger;display:block;padding:5px;">')
     file.write(NewForward)
@@ -242,23 +222,24 @@ def makeHTML(ForwardTotal, ReverseTotal, resultForward, resultReverse):
 
     file.close()
 
+
+
+def ProgramFormat():
+    GetSeqFiles()
+                   
+    theComp = getCompliment(RvSeq);
+    RvCompFlipped = ReverseOrder(theComp);
+
+    Alignment(FwdSeq, RvCompFlipped)
+    
+    ForwardResults, ReverseResults = Alignment(FwdSeq,RvCompFlipped)
+
+    makeHTML(FwdSeq,RvSeq,ForwardResults,ReverseResults)
+    url = "Results.html"
+    webbrowser.open(url, new=2)
+    
+    sys.exit()
+    
 #---------------------------------------------------------------------------
 
-GetSeqFiles()
-               
-theComp = getCompliment(RvSeq);
-RvCompFlipped = ReverseOrder(theComp);
-
-ForwardResults, ReverseResults = Alignment(FwdSeq,RvCompFlipped)
-
-
-
-makeHTML(FwdSeq,RvSeq,ForwardResults,ReverseResults)
-
-
-
-url = "Results.html"
-webbrowser.open(url, new=2)
-
-
-sys.exit()
+ProgramFormat()
